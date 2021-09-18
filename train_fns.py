@@ -8,11 +8,36 @@ import os
 
 import utils
 import losses
+import traceback
+import cv2
+from PIL import Image
+import numpy as np
+
 
 
 # Dummy training function for debugging
-def dummy_training_function():
+def dummy_training_function(config):
   def train(x, y):
+    x = torch.split(x, config['batch_size'])
+    y = torch.split(y, config['batch_size'])
+
+    for _x in x:
+        _batchsize = _x.shape[0]
+        _x = (255 * ((_x + 1) / 2.0)).byte().cpu().numpy()
+        for _idx in range(_batchsize):
+            _img = _x[_idx,:,:]
+            #img = Image.fromarray(_img, 'RGB')
+            np_img = np.array(_img)
+            np_img2 = np_img.transpose(1, 2, 0)
+            np_img2 = cv2.cvtColor(np_img2, cv2.COLOR_BGR2RGB)
+            cv2.imshow("image", np_img2)
+            k = cv2.waitKey(0)
+            if k == 27:  # esc key
+                cv2.destroyAllWindow()
+            print("done")
+
+
+
     return {}
   return train
 
@@ -25,7 +50,12 @@ def GAN_training_function(G, D, GD, z_, y_, ema, state_dict, config):
     x = torch.split(x, config['batch_size'])
     y = torch.split(y, config['batch_size'])
     counter = 0
-    
+    #traceback.print_stack()
+
+    # if ((len(x) == config['num_D_accumulations']) and  (len(y) == config['num_D_accumulations'])):
+    #     print(f"Batch size x : {len(x)}, y : {len(y)}, num_D_Accumulations {config['num_D_accumulations']}")
+
+
     # Optionally toggle D and G's "require_grad"
     if config['toggle_grads']:
       utils.toggle_grad(D, True)
@@ -37,9 +67,12 @@ def GAN_training_function(G, D, GD, z_, y_, ema, state_dict, config):
       for accumulation_index in range(config['num_D_accumulations']):
         z_.sample_()
         y_.sample_()
-        D_fake, D_real = GD(z_[:config['batch_size']], y_[:config['batch_size']], 
-                            x[counter], y[counter], train_G=False, 
-                            split_D=config['split_D'])
+        try:
+            D_fake, D_real = GD(z_[:config['batch_size']], y_[:config['batch_size']],
+                                x[counter], y[counter], train_G=False,
+                                split_D=config['split_D'])
+        except Exception as e:
+            print(e)
          
         # Compute components of D's loss, average them, and divide by 
         # the number of gradient accumulations
@@ -120,6 +153,7 @@ def save_and_sample(G, D, G_ema, z_, y_, fixed_z, fixed_y,
   # Save a random sample sheet with fixed z and y      
   with torch.no_grad():
     if config['parallel']:
+
       fixed_Gz =  nn.parallel.data_parallel(which_G, (fixed_z, which_G.shared(fixed_y)))
     else:
       fixed_Gz = which_G(fixed_z, which_G.shared(fixed_y))
@@ -129,7 +163,7 @@ def save_and_sample(G, D, G_ema, z_, y_, fixed_z, fixed_y,
                                                   experiment_name,
                                                   state_dict['itr'])
   torchvision.utils.save_image(fixed_Gz.float().cpu(), image_filename,
-                             nrow=int(fixed_Gz.shape[0] **0.5), normalize=True)
+                             nrow=int(fixed_Gz.shape[0] **0.3), normalize=True)
   # For now, every time we save, also save sample sheets
   utils.sample_sheet(which_G,
                      classes_per_sheet=utils.classes_per_sheet_dict[config['dataset']],
@@ -142,7 +176,7 @@ def save_and_sample(G, D, G_ema, z_, y_, fixed_z, fixed_y,
   # Also save interp sheets
   for fix_z, fix_y in zip([False, False, True], [False, True, False]):
     utils.interp_sheet(which_G,
-                       num_per_sheet=16,
+                       num_per_sheet=5,
                        num_midpoints=8,
                        num_classes=config['n_classes'],
                        parallel=config['parallel'],

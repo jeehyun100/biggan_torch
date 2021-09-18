@@ -102,7 +102,7 @@ def run(config):
     utils.load_weights(G, D, state_dict,
                        config['weights_root'], experiment_name, 
                        config['load_weights'] if config['load_weights'] else None,
-                       G_ema if config['ema'] else None)
+                       G_ema if config['ema'] else None, strict=False)
 
   # If parallel, parallelize the GD module
   if config['parallel']:
@@ -157,7 +157,7 @@ def run(config):
                                             ema, state_dict, config)
   # Else, assume debugging and use the dummy train fn
   else:
-    train = train_fns.dummy_training_function()
+    train = train_fns.dummy_training_function(config)
   # Prepare Sample function for use with inception metrics
   sample = functools.partial(utils.sample,
                               G=(G_ema if config['ema'] and config['use_ema']

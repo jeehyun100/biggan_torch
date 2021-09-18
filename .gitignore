@@ -2,4 +2,11 @@ data/
 logs/
 .idea/
 __pycache__/
+*.npz
+*.zip
+pretrained/
+weights/
+*.err
+*.out
+samples/
 
