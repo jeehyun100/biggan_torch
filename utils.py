@@ -406,32 +406,40 @@ dset_dict = {'I32': dset.ImageFolder, 'I64': dset.ImageFolder,
              'I32_hdf5': dset.ILSVRC_HDF5, 'I64_hdf5': dset.ILSVRC_HDF5, 
              'I128_hdf5': dset.ILSVRC_HDF5, 'I256_hdf5': dset.ILSVRC_HDF5,
              'C10': dset.CIFAR10, 'C100': dset.CIFAR100,
-             'D256':dset.ImageFolder,'D256_hdf5': dset.ILSVRC_HDF5,}
+             'D256':dset.ImageFolder,'D256_hdf5': dset.ILSVRC_HDF5,
+             'P256':dset.ImageFolder,'P256_hdf5': dset.ILSVRC_HDF5,}
 imsize_dict = {'I32': 32, 'I32_hdf5': 32,
                'I64': 64, 'I64_hdf5': 64,
                'I128': 128, 'I128_hdf5': 128,
                'I256': 256, 'I256_hdf5': 256,
                'C10': 32, 'C100': 32,
-               'D256': 256, 'D256_hdf5': 256}
+               'D256': 256, 'D256_hdf5': 256,
+               'P256': 256, 'P256_hdf5': 256}
 root_dict = {'I32': 'ImageNet', 'I32_hdf5': 'ILSVRC32.hdf5',
              'I64': 'ImageNet', 'I64_hdf5': 'ILSVRC64.hdf5',
              'I128': 'ImageNet', 'I128_hdf5': 'ILSVRC128.hdf5',
              'I256': 'ImageNet', 'I256_hdf5': 'ILSVRC256.hdf5',
              'C10': 'cifar', 'C100': 'cifar',
-             'D256': 'Diode', 'D256_hdf5': 'DIODE256.hdf5'}
+             'D256': 'Diode', 'D256_hdf5': 'DIODE256.hdf5',
+             'P256': 'Place365', 'P256_hdf5': 'PLACE256.hdf5',
+            }
 nclass_dict = {'I32': 1000, 'I32_hdf5': 1000,
                'I64': 1000, 'I64_hdf5': 1000,
                'I128': 1000, 'I128_hdf5': 1000,
                'I256': 1000, 'I256_hdf5': 1000,
                'C10': 10, 'C100': 100,
-               'D256': 2,'D256_hdf5': 2}
+               'D256': 2,'D256_hdf5': 2,
+               'P256': 344, 'P256_hdf5': 344,
+              }
 # Number of classes to put per sample sheet               
 classes_per_sheet_dict = {'I32': 50, 'I32_hdf5': 50,
                           'I64': 50, 'I64_hdf5': 50,
                           'I128': 20, 'I128_hdf5': 20,
                           'I256': 20, 'I256_hdf5': 20,
                           'C10': 10, 'C100': 100,
-                          'D256': 1, 'D256_hdf5': 1}
+                          'D256': 1, 'D256_hdf5': 1,
+                          'D256': 10, 'D256_hdf5': 10,
+                          'P256': 10, 'P256_hdf5': 10}
 activation_dict = {'inplace_relu': nn.ReLU(inplace=True),
                    'relu': nn.ReLU(inplace=False),
                    'ir': nn.ReLU(inplace=True),}
@@ -575,15 +583,15 @@ def get_data_loaders(dataset, data_root=None, augment=False, batch_size=64,
   loaders = []   
   if use_multiepoch_sampler:
     print('Using multiepoch sampler from start_itr %d...' % start_itr)
-    loader_kwargs = {'num_workers': num_workers, 'pin_memory': pin_memory}
+    loader_kwargs = {'num_workers': num_workers, 'pin_memory': pin_memory,  'drop_last': True}
     sampler = MultiEpochSampler(train_set, num_epochs, start_itr, batch_size)
     train_loader = DataLoader(train_set, batch_size=batch_size,
-                              sampler=sampler, drop_last = True, **loader_kwargs)
+                              sampler=sampler, **loader_kwargs)
   else:
     loader_kwargs = {'num_workers': num_workers, 'pin_memory': pin_memory,
                      'drop_last': drop_last} # Default, drop last incomplete batch
     train_loader = DataLoader(train_set, batch_size=batch_size,
-                              shuffle=shuffle, drop_last = True, **loader_kwargs)
+                              shuffle=shuffle, **loader_kwargs)
   loaders.append(train_loader)
   return loaders
 

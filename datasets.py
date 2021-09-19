@@ -187,8 +187,8 @@ class ILSVRC_HDF5(data.Dataset):
                val_split=0, **kwargs): # last four are dummies
       
     self.root = root
-    self.num_imgs = len(h5.File(root, 'r')['labels'])
-    
+    #self.num_imgs = len(h5.File(root, 'r')['labels'])
+    self.num_imgs = 24
     # self.transform = transform
     self.target_transform = target_transform   
     
@@ -202,8 +202,8 @@ class ILSVRC_HDF5(data.Dataset):
     if self.load_in_mem:
       print('Loading %s into memory...' % root)
       with h5.File(root,'r') as f:
-        self.data = f['imgs'][:]
-        self.labels = f['labels'][:]
+        self.data = f['imgs'][:24]
+        self.labels = f['labels'][:24]
 
   def __getitem__(self, index):
     """

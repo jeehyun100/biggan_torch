@@ -20,11 +20,11 @@ def prepare_parser():
   usage = 'Calculate and store inception metrics.'
   parser = ArgumentParser(description=usage)
   parser.add_argument(
-    '--dataset', type=str, default='D256_hdf5',
+    '--dataset', type=str, default='P256_hdf5',
     help='Which Dataset to train on, out of I128, I256, C10, C100...'
          'Append _hdf5 to use the hdf5 version of the dataset. (default: %(default)s)')
   parser.add_argument(
-    '--data_root', type=str, default='data',
+    '--data_root', type=str, default='/shared_data/p_data/Place365/data_256',
     help='Default location where data is stored (default: %(default)s)') 
   parser.add_argument(
     '--batch_size', type=int, default=64,
@@ -36,7 +36,7 @@ def prepare_parser():
     '--augment', action='store_true', default=False,
     help='Augment with random crops and flips (default: %(default)s)')
   parser.add_argument(
-    '--num_workers', type=int, default=8,
+    '--num_workers', type=int, default=0,
     help='Number of dataloader workers (default: %(default)s)')
   parser.add_argument(
     '--shuffle', action='store_true', default=False,
@@ -56,12 +56,13 @@ def run(config):
   pool, logits, labels = [], [], []
   device = 'cuda'
   for i, (x, y) in enumerate(tqdm(loaders[0])):
-    x = x.to(device)
-    with torch.no_grad():
-      pool_val, logits_val = net(x)
-      pool += [np.asarray(pool_val.cpu())]
-      logits += [np.asarray(F.softmax(logits_val, 1).cpu())]
-      labels += [np.asarray(y.cpu())]
+    if i % 10 == 0:
+      x = x.to(device)
+      with torch.no_grad():
+        pool_val, logits_val = net(x)
+        pool += [np.asarray(pool_val.cpu())]
+        logits += [np.asarray(F.softmax(logits_val, 1).cpu())]
+        labels += [np.asarray(y.cpu())]
 
   pool, logits, labels = [np.concatenate(item, 0) for item in [pool, logits, labels]]
   # uncomment to save pool, logits, and labels to disk
